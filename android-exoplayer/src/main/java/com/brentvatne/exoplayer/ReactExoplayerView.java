@@ -250,12 +250,8 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private MediaSource buildCaptionSource(Uri uri) {
-        Format textFormat = Format.createTextSampleFormat(null, MimeTypes.TEXT_VTT,
-                null, Format.NO_VALUE, Format.NO_VALUE, "en", null);
-        /*
-        Uri srtUri
-                = Uri.parse("http://brightcove01.brightcove.com/24/5344802162001/201804/2900/5344802162001_cf122655-be66-4881-9dcc-c1f220fb4216.vtt?pubId=5344802162001&videoId=5763289678001");
-        */
+        Format textFormat = Format.createTextSampleFormat("sub", MimeTypes.TEXT_VTT,
+                Format.NO_VALUE, "en");
         return new SingleSampleMediaSource(uri, mediaDataSourceFactory, textFormat, C.TIME_UNSET);
     }
 
