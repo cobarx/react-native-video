@@ -3,6 +3,7 @@ package com.brentvatne.exoplayer;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.common.MapBuilder;
@@ -22,6 +23,10 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_SRC = "src";
     private static final String PROP_SRC_URI = "uri";
     private static final String PROP_SRC_TYPE = "type";
+    private static final String PROP_TRACK = "track";
+    private static final String PROP_TRACK_URI = "uri";
+    private static final String PROP_TRACK_TYPE = "type";
+    private static final String PROP_CAPTIONS = "captions";
     private static final String PROP_RESIZE_MODE = "resizeMode";
     private static final String PROP_REPEAT = "repeat";
     private static final String PROP_PAUSED = "paused";
@@ -103,6 +108,32 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
                 }
             }
         }
+    }
+
+    @ReactProp(name = PROP_TRACK)
+    public void setTrack(final ReactExoplayerView videoView, @Nullable ReadableMap track) {
+        Context context = videoView.getContext().getApplicationContext();
+        String uriString = track.hasKey(PROP_TRACK_URI) ? track.getString(PROP_TRACK_URI) : null;
+        String extension = track.hasKey(PROP_TRACK_TYPE) ? track.getString(PROP_TRACK_TYPE) : null;
+        Log.v("RNV", "uri: " + uriString);
+        Log.v("RNV", "type: " + extension);
+
+        if (TextUtils.isEmpty(uriString)) {
+            return;
+        }
+
+        if (startsWithValidScheme(uriString)) {
+            Uri srcUri = Uri.parse(uriString);
+
+            if (srcUri != null) {
+                videoView.setTrack(srcUri, extension);
+            }
+        }
+    }
+
+    @ReactProp(name = PROP_CAPTIONS, defaultBoolean = false)
+    public void setCaptions(final ReactExoplayerView videoView, final boolean enabled) {
+        videoView.setCaptionsModifier(enabled);
     }
 
     @ReactProp(name = PROP_RESIZE_MODE)

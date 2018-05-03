@@ -33,6 +33,8 @@ import com.google.android.exoplayer2.source.BehindLiveWindowException;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.LoopingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.MergingMediaSource;
+import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
@@ -47,6 +49,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.util.MimeTypes;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -92,6 +95,9 @@ class ReactExoplayerView extends FrameLayout implements
     // Props from React
     private Uri srcUri;
     private String extension;
+    private Uri captionUri;
+    private String captionExtension;
+    private boolean captionsEnabled = true;
     private boolean repeat;
     private boolean disableFocus;
     private float mProgressUpdateInterval = 250.0f;
@@ -216,11 +222,24 @@ class ReactExoplayerView extends FrameLayout implements
             player.setPlaybackParameters(params);
         }
         if (playerNeedsSource && srcUri != null) {
-            MediaSource mediaSource = buildMediaSource(srcUri, extension);
+            MediaSource mediaSource;
+            MediaSource videoMediaSource = buildMediaSource(srcUri, extension);
+            if (captionUri != null) {
+                MediaSource textMediaSource = buildCaptionSource(captionUri);
+                mediaSource = new MergingMediaSource(videoMediaSource, textMediaSource);
+            } else {
+                mediaSource = videoMediaSource;
+            }
             mediaSource = repeat ? new LoopingMediaSource(mediaSource) : mediaSource;
             boolean haveResumePosition = resumeWindow != C.INDEX_UNSET;
             if (haveResumePosition) {
                 player.seekTo(resumeWindow, resumePosition);
+            }
+            if (captionUri != null && !captionsEnabled) {
+                int captionIndex = getCaptionsTrackIndex();
+                if (captionIndex != C.INDEX_UNSET) {
+                    trackSelector.setRendererDisabled(captionIndex, true);
+                }
             }
             player.prepare(mediaSource, !haveResumePosition, false);
             playerNeedsSource = false;
@@ -228,6 +247,16 @@ class ReactExoplayerView extends FrameLayout implements
             eventEmitter.loadStart();
             loadVideoStarted = true;
         }
+    }
+
+    private MediaSource buildCaptionSource(Uri uri) {
+        Format textFormat = Format.createTextSampleFormat(null, MimeTypes.TEXT_VTT,
+                null, Format.NO_VALUE, Format.NO_VALUE, "en", null);
+        /*
+        Uri srtUri
+                = Uri.parse("http://brightcove01.brightcove.com/24/5344802162001/201804/2900/5344802162001_cf122655-be66-4881-9dcc-c1f220fb4216.vtt?pubId=5344802162001&videoId=5763289678001");
+        */
+        return new SingleSampleMediaSource(uri, mediaDataSourceFactory, textFormat, C.TIME_UNSET);
     }
 
     private MediaSource buildMediaSource(Uri uri, String overrideExtension) {
@@ -343,6 +372,15 @@ class ReactExoplayerView extends FrameLayout implements
     private void clearResumePosition() {
         resumeWindow = C.INDEX_UNSET;
         resumePosition = C.TIME_UNSET;
+    }
+
+    private int getCaptionsTrackIndex() {
+        for (int i = 0; i < player.getRendererCount(); ++i) {
+            if (player.getRendererType(i) == C.TRACK_TYPE_TEXT) {
+                return i;
+            }
+        }
+        return C.INDEX_UNSET;
     }
 
     /**
@@ -557,6 +595,20 @@ class ReactExoplayerView extends FrameLayout implements
         }
     }
 
+    public void setTrack(final Uri uri, final String extension) {
+        if (uri != null) {
+            boolean isOriginalSourceNull = captionUri == null;
+            boolean isSourceEqual = uri.equals(captionUri);
+
+            this.captionUri = uri;
+            this.captionExtension = extension;
+
+            if (!isOriginalSourceNull && !isSourceEqual) {
+                reloadSource();
+            }
+        }
+    }
+
     public void setProgressUpdateInterval(final float progressUpdateInterval) {
         mProgressUpdateInterval = progressUpdateInterval;
     }
@@ -583,6 +635,16 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setResizeModeModifier(@ResizeMode.Mode int resizeMode) {
         exoPlayerView.setResizeMode(resizeMode);
+    }
+
+    public void setCaptionsModifier(boolean enabled) {
+        captionsEnabled = enabled;
+        if (player != null) {
+            int index = getCaptionsTrackIndex();
+            if (index != C.INDEX_UNSET) {
+                trackSelector.setRendererDisabled(index, !captionsEnabled);
+            }
+        }
     }
 
     public void setRepeatModifier(boolean repeat) {
