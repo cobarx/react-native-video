@@ -159,6 +159,7 @@ export default class Video extends Component {
   render() {
     const resizeMode = this.props.resizeMode;
     const source = resolveAssetSource(this.props.source) || {};
+    const track = resolveAssetSource(this.props.track) || {};
 
     let uri = source.uri || '';
     if (uri && uri.match(/^\//)) {
@@ -167,6 +168,8 @@ export default class Video extends Component {
 
     const isNetwork = !!(uri && uri.match(/^https?:/));
     const isAsset = !!(uri && uri.match(/^(assets-library|file|content|ms-appx|ms-appdata):/));
+
+    let trackUri = track.uri || '';
 
     let nativeResizeMode;
     if (resizeMode === VideoResizeMode.stretch) {
@@ -190,6 +193,9 @@ export default class Video extends Component {
         type: source.type || '',
         mainVer: source.mainVer || 0,
         patchVer: source.patchVer || 0,
+      },
+      trackSrc: {
+        uri: trackUri
       },
       onVideoLoadStart: this._onLoadStart,
       onVideoLoad: this._onLoad,
@@ -246,6 +252,7 @@ export default class Video extends Component {
 
 Video.propTypes = {
   /* Native only */
+  trackSrc: PropTypes.object,
   src: PropTypes.object,
   seek: PropTypes.number,
   fullscreen: PropTypes.bool,
@@ -263,6 +270,12 @@ Video.propTypes = {
   onVideoFullscreenPlayerDidDismiss: PropTypes.func,
 
   /* Wrapper component */
+  track: PropTypes.shape({
+    label: PropTypes.string,
+    uri: PropTypes.string,
+    type: PropTypes.string
+  }),
+  captions: PropTypes.bool,
   source: PropTypes.oneOfType([
     PropTypes.shape({
       uri: PropTypes.string
@@ -270,12 +283,6 @@ Video.propTypes = {
     // Opaque type returned by require('./video.mp4')
     PropTypes.number
   ]),
-  track: PropTypes.shape({
-    label: PropTypes.string,
-    uri: PropTypes.string,
-    type: PropTypes.string
-  }),
-  captions: PropTypes.bool,
   resizeMode: PropTypes.string,
   poster: PropTypes.string,
   repeat: PropTypes.bool,

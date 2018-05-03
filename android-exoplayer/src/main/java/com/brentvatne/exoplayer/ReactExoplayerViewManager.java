@@ -23,7 +23,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_SRC = "src";
     private static final String PROP_SRC_URI = "uri";
     private static final String PROP_SRC_TYPE = "type";
-    private static final String PROP_TRACK = "track";
+    private static final String PROP_TRACK = "trackSrc";
     private static final String PROP_TRACK_URI = "uri";
     private static final String PROP_TRACK_TYPE = "type";
     private static final String PROP_CAPTIONS = "captions";
@@ -115,8 +115,6 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
         Context context = videoView.getContext().getApplicationContext();
         String uriString = track.hasKey(PROP_TRACK_URI) ? track.getString(PROP_TRACK_URI) : null;
         String extension = track.hasKey(PROP_TRACK_TYPE) ? track.getString(PROP_TRACK_TYPE) : null;
-        Log.v("RNV", "uri: " + uriString);
-        Log.v("RNV", "type: " + extension);
 
         if (TextUtils.isEmpty(uriString)) {
             return;
