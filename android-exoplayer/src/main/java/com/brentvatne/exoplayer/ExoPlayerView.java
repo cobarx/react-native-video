@@ -49,7 +49,8 @@ public final class ExoPlayerView extends FrameLayout {
     public ExoPlayerView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        boolean useTextureView = false;
+        // In order to support scaling the view, this must be true. Needed for MasterClass
+        boolean useTextureView = true;
 
         ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
